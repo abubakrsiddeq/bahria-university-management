@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <conio.h> // For _getch()
 using namespace std;
 
 // Base class for all users
@@ -261,9 +262,33 @@ private:
     }
 };
 
+// Password verification function for admin panel
+bool verifyPassword(const string& predefinedPassword) {
+    string password;
+    char ch;
+
+    cout << "Enter Admin Password: ";
+
+    // Loop to take character input securely
+    while ((ch = _getch()) != '\r') { // '\r' is the Enter key
+        if (ch == '\b' && !password.empty()) { // Handle Backspace
+            password.pop_back();
+            cout << "\b \b"; // Erase last asterisk from console
+        }
+        else if (ch != '\b') { // Add character to password
+            password += ch;
+            cout << '*'; // Display asterisk for security
+        }
+    }
+    cout << endl;
+
+    return password == predefinedPassword;
+}
+
 // Main function
 int main() {
     Admin admin("Admin", "admin@university.com", "password");
+    const string predefinedPassword = "admin123";
 
     int mainChoice;
     do {
@@ -279,7 +304,12 @@ int main() {
 
         switch (mainChoice) {
         case 1:
-            admin.displayMenu();
+            if (verifyPassword(predefinedPassword)) {
+                admin.displayMenu();
+            }
+            else {
+                cout << "Incorrect Password. Returning to Main Menu." << endl;
+            }
             break;
         case 2:
             cout << "Student Admission Portal is under construction." << endl;
