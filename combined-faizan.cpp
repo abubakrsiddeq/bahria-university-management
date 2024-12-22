@@ -62,6 +62,9 @@ public:
         contact = newContact;
         subject = newSubject;
     }
+    void getSubjectDetails() {
+
+    }
     void displayDetails() const override {
         User::displayDetails();
         cout << setw(20) << subject << endl;
@@ -310,11 +313,11 @@ protected:
     string password;
 
 public:
-    virtual void registerUser() = 0;   // Pure virtual function
-    virtual bool login() = 0;          // Pure virtual function
+    virtual void courseregisterUser() = 0;   // Pure virtual function
+    virtual bool courselogin() = 0;          // Pure virtual function
 };
 
-class CourseTeacher:public CourseUser {
+class CourseTeacher :public CourseUser {
 private:
     string name;
     bool isLoggedIn = false;
@@ -325,7 +328,7 @@ private:
     bool isSubjectDetailsLoaded = false;  // Track if subject details are loaded
 
 public:
-    void registerUser() override {
+    void courseregisterUser() override {
         cout << "\n--- Teacher Registration ---\n";
         cout << "Enter Name: ";
         getline(cin, name);
@@ -342,7 +345,7 @@ public:
         saveTeacherDetails();
     }
 
-    bool login() override {
+    bool courselogin() override {
         cout << "\n--- Teacher Login ---\n";
         string inputEmail, inputPassword;
 
@@ -580,7 +583,7 @@ private:
     const string studentFileName = "student_details.txt"; // File name for storing student details
 
 public:
-    void registerUser() override {
+    void courseregisterUser() override {
         cout << "\n--- Student Registration ---\n";
         cout << "Enter Name: ";
         getline(cin, name);
@@ -597,7 +600,7 @@ public:
         saveStudentDetailsToFile();
     }
 
-    bool login() override {
+    bool courselogin() override {
         cout << "\n--- Student Login ---\n";
         string inputEmail, inputPassword;
 
@@ -632,26 +635,26 @@ public:
         } while (tolower(choice) == 'y');
     }
 
-    void displayChosenSubjects(const Teacher& teacher) {
+    void displayChosenSubjects(const CourseTeacher& courseteacher) {
         cout << "\n--- Your Subjects and Details ---\n";
         if (chosenSubjects.empty()) {
             cout << "No subjects chosen yet.\n";
             return;
         }
 
-        if (!teacher.hasSubjectDetails()) {
+        if (!courseteacher.hasSubjectDetails()) {
             cout << "Teacher has not loaded subject details. Please try again later.\n";
             return;
         }
 
-        const map<string, vector<string>>& teacherSubjects = teacher.getSubjectDetails();
+        const map<string, vector<string>>& courseteacherSubjects = courseteacher.getSubjectDetails();
         for (const string& subject : chosenSubjects) {
-            if (teacherSubjects.find(subject) != teacherSubjects.end()) {
+            if (courseteacherSubjects.find(subject) != courseteacherSubjects.end()) {
                 cout << "\nSubject: " << subject << "\n";
-                cout << "  - Topic: " << teacherSubjects.at(subject)[0] << "\n";
-                cout << "  - Assignment: " << teacherSubjects.at(subject)[1] << "\n";
-                cout << "  - Past Paper: " << teacherSubjects.at(subject)[2] << "\n";
-                cout << "  - Quiz: " << teacherSubjects.at(subject)[3] << "\n";
+                cout << "  - Topic: " << courseteacherSubjects.at(subject)[0] << "\n";
+                cout << "  - Assignment: " << courseteacherSubjects.at(subject)[1] << "\n";
+                cout << "  - Past Paper: " << courseteacherSubjects.at(subject)[2] << "\n";
+                cout << "  - Quiz: " << courseteacherSubjects.at(subject)[3] << "\n";
             }
             else {
                 cout << "\nSubject: " << subject << " - No details available.\n";
@@ -676,7 +679,7 @@ public:
         }
     }
 
-    void dashboard(const Teacher& teacher) {
+    void dashboard(const CourseTeacher& courseteacher) {
         if (!isLoggedIn) {
             cout << "Please log in first!\n";
             return;
@@ -694,7 +697,7 @@ public:
 
             switch (choice) {
             case 1:
-                displayChosenSubjects(teacher);
+                displayChosenSubjects(courseteacher);
                 break;
             case 2:
                 selectSubjects();
@@ -803,11 +806,168 @@ public:
         } while (choice != 3);
     }
 };
+
+class CoursePortal {
+public:
+    // Constructor to initialize any necessary attributes (if any)
+    CoursePortal() {}
+
+    // Main menu function to display options
+    void displayMainMenu() {
+        cout << "--- COURSE PORTAL ---\n";
+        cout << "1. Enter as Teacher\n";
+        cout << "2. Enter as Student\n";
+        cout << "3. Admin Panel\n";
+        cout << "4. Exit\n";
+        cout << "Enter your choice: ";
+    }
+
+    // Handle actions for all roles
+    void handleActions() {
+        int choice;
+        do {
+            displayMainMenu();
+            cin >> choice;
+            cin.ignore(); // Clear newline left in the buffer
+
+            switch (choice) {
+            case 1:
+                handleTeacher();
+                break;
+            case 2:
+                handleStudent();
+                break;
+            case 3:
+                handleAdmin();
+                break;
+            case 4:
+                cout << "Exiting Course Portal. Goodbye!\n";
+                break;
+            default:
+                cout << "Invalid choice. Please try again.\n";
+            }
+        } while (choice != 4);
+    }
+
+private:
+    // Teacher login and registration
+    void handleTeacher() {
+        int option;
+        do {
+            cout << "\n--- Teacher Menu ---\n";
+            cout << "1. Login\n2. Registration\n3. Back to Main Menu\n";
+            cout << "Enter your choice: ";
+            cin >> option;
+            cin.ignore(); // Clear input buffer
+
+            switch (option) {
+            case 1:
+                if (login("Teacher"))
+                    teacherDashboard();
+                break;
+            case 2:
+                registerUser("Teacher");
+                break;
+            case 3:
+                cout << "Returning to Main Menu...\n";
+                break;
+            default:
+                cout << "Invalid choice. Try again!\n";
+            }
+        } while (option != 3);
+    }
+
+    // Student login and registration
+    void handleStudent() {
+        int option;
+        do {
+            cout << "\n--- Student Menu ---\n";
+            cout << "1. Login\n2. Registration\n3. Back to Main Menu\n";
+            cout << "Enter your choice: ";
+            cin >> option;
+            cin.ignore(); // Clear input buffer
+
+            switch (option) {
+            case 1:
+                if (login("Student"))
+                    studentDashboard();
+                break;
+            case 2:
+                registerUser("Student");
+                break;
+            case 3:
+                cout << "Returning to Main Menu...\n";
+                break;
+            default:
+                cout << "Invalid choice. Try again!\n";
+            }
+        } while (option != 3);
+    }
+
+    // Admin login and panel access
+    void handleAdmin() {
+        int option;
+        cout << "\n--- Admin Panel ---\n";
+        cout << "1. Admin Login\n2. Exit\n";
+        cout << "Enter your choice: ";
+        cin >> option;
+        cin.ignore(); // Clear input buffer
+
+        if (option == 1) {
+            if (login("Admin"))
+                adminPanel();
+        }
+        else {
+            cout << "Exiting...\n";
+        }
+    }
+
+    // Simulate login process for Teacher, Student, or Admin
+    bool login(const string& userType) {
+        string username, password;
+        cout << "Enter " << userType << " Username: ";
+        cin >> username;
+        cout << "Enter " << userType << " Password: ";
+        cin >> password;
+        // In a real application, you would check against a database here
+        cout << userType << " logged in successfully!\n";
+        return true;
+    }
+
+    // Simulate registration process for Teacher or Student
+    void registerUser(const string& userType) {
+        string username, password;
+        cout << "Enter " << userType << " Username: ";
+        cin >> username;
+        cout << "Enter " << userType << " Password: ";
+        cin >> password;
+        // In a real application, you would store the credentials
+        cout << userType << " registered successfully!\n";
+    }
+
+    // Teacher dashboard (after successful login)
+    void teacherDashboard() {
+        cout << "Welcome to the Teacher Dashboard!\n";
+        // Add teacher-specific functionalities here
+    }
+
+    // Student dashboard (after successful login)
+    void studentDashboard() {
+        cout << "Welcome to the Student Dashboard!\n";
+        // Add student-specific functionalities here
+    }
+
+    // Admin panel (after successful login)
+    void adminPanel() {
+        cout << "Welcome to the Admin Panel!\n";
+        // Add admin-specific functionalities like user management here
+    }
+};
 // Function Prototypes
-void displayMainMenu();
-void handleTeacher(Teacher& teacher);
-void handleStudent(Student& student, Teacher& teacher);
-void handleAdmin(Admin& admin);
+void displayMainMenu(CoursePortal);    // Displays the main menu for the CoursePortal
+void handleTeacher(CourseTeacher);    // Handles teacher-related actions (login/registration)
+void handleStudent(CourseStudent, CourseTeacher);    // Handles student-related actions (login/registration)
+void handleAdmin(CourseAdmin);    // Handles admin-related actions (view teachers/students)
 
 class UserManagement {
 private:
@@ -1265,10 +1425,10 @@ int main() {
     CourseManagement cm;
     AdmissionManagement am;
     TeacherPortal teacher;
+    CoursePortal portal;
     CourseTeacher cteacher;
     CourseStudent student;
     CourseAdmin admin;
-    int choice;
 
     int mainChoice;
     do {
@@ -1338,104 +1498,17 @@ int main() {
         break;
         case 3:
             teacher.run();
+            break;
         case 4:
-            cteacher.dashboard();
-            do {
-                displayMainMenu();
-                cin >> choice;
-                cin.ignore(); // Clear newline left in the buffer
-
-                switch (choice) {
-                case 1:
-                    handleTeacher(teacher);
-                    break;
-                case 2:
-                    handleStudent(student, teacher);
-                    break;
-                case 3:
-                    handleAdmin(admin);
-                    break;
-                case 4:
-                    cout << "Exiting Course Portal. Goodbye!\n";
-                    break;
-                default:
-                    cout << "Invalid choice. Please try again.\n";
-                }
-            } while (choice != 4);
-
-            return 0;
-        }
-
-        // Function to Display Main Menu
-        void displayMainMenu() {
-            cout << "--- COURSE PORTAL ---\n";
-            cout << "1. Enter as Teacher\n";
-            cout << "2. Enter as Student\n";
-            cout << "3. Admin Panel\n";
-            cout << "4. Exit\n";
-            cout << "Enter your choice: ";
-        }
-
-        // Function to Handle Teacher Actions
-        void handleTeacher(Teacher& teacher) {
-            int option;
-            do {
-                cout << "\n--- Teacher Menu ---\n";
-                cout << "1. Login\n2. Registration\n3. Back to Main Menu\n";
-                cout << "Enter your choice: ";
-                cin >> option;
-                cin.ignore(); // Clear input buffer
-
-                switch (option) {
-                case 1:
-                    if (teacher.login())
-                        teacher.dashboard();
-                    break;
-                case 2:
-                    teacher.registerUser();
-                    break;
-                case 3:
-                    cout << "Returning to Main Menu...\n";
-                    break;
-                default:
-                    cout << "Invalid choice. Try again!\n";
-                }
-            } while (option != 3);
-        }
-
-        // Function to Handle Student Actions
-        void handleStudent(Student& student, Teacher& teacher) {
-            int option;
-            do {
-                cout << "\n--- Student Menu ---\n";
-                cout << "1. Login\n2. Registration\n3. Back to Main Menu\n";
-                cout << "Enter your choice: ";
-                cin >> option;
-                cin.ignore(); // Clear input buffer
-
-                switch (option) {
-                case 1:
-                    if (student.login())
-                        student.dashboard(teacher);
-                    break;
-                case 2:
-                    student.registerUser();
-                    break;
-                case 3:
-                    cout << "Returning to Main Menu...\n";
-                    break;
-                default:
-                    cout << "Invalid choice. Try again!\n";
-                }
-            } while (option != 3);
+            portal.handleActions();
             break;
         case 5:
-            cout << "Exiting program...\n";
+            cout << "Exiting the program. Goodbye!\n";
             break;
         default:
-            cout << "Invalid choice! Please try again.\n";
+            cout << "Invalid choice. Try again!\n";
         }
-    } while (mainChoice != 4);
+    } while (mainChoice != 5);
 
     return 0;
 }
