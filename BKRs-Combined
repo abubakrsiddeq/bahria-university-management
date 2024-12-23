@@ -788,8 +788,31 @@ private:
         cout << "Registration successful! Your registered number is: " << newStudent.registeredNumber << "\n";
     }
 
+    // Function to input password securely
+    string inputAPassword() {
+        string password;
+        char ch;
+
+        // Loop to take character input securely
+        while ((ch = _getch()) != '\r') { // '\r' is the Enter key
+            if (ch == '\b' && !password.empty()) { // Handle Backspace
+                password.pop_back();
+                cout << "\b \b"; // Erase last asterisk from console
+            }
+            else if (ch != '\b') { // Add character to password
+                password += ch;
+                cout << '*'; // Display asterisk for security
+            }
+        }
+        cout << endl;
+
+        return password;
+    }
+
+    // Function to log in a student
     bool loginStudent(string& username) {
         string password;
+
         cout << "Enter username: ";
         cin.ignore();
         getline(cin, username);
@@ -800,7 +823,7 @@ private:
         }
 
         cout << "Enter password: ";
-        getline(cin, password);
+        password = inputAPassword(); // Use secure password input
 
         if (studentDatabase[username].password != password) {
             cout << "Incorrect password!\n";
