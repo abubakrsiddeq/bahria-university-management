@@ -4,6 +4,7 @@
 #include <conio.h> // For _getch()
 #include <iomanip>
 #include <map>
+#include <algorithm>
 #include <fstream>
 using namespace std;
 
@@ -20,9 +21,10 @@ protected:
     string password;
 
 public:
+   
     User(string name, int id, string contact)
         : name(name), id(id), contact(contact) {}
-	
+
     //for teacher and students
     User(string username, string password) : username(username), password(password) {}
     bool login(string uname, string pwd) {
@@ -238,9 +240,688 @@ public:
 int Student::enrollmentCounter = 2000;
 //---------------------------------------------------------------
 
-//------------Admin Class
+
+// ======================== User Management ========================
+class UserManagement {
+private:
+    vector<Teacher> teachers;
+    vector<Student> students;
+
+public:
+    void addTeacher() {
+        string username, password;
+        cout << "Enter Teacher Username: ";
+        cin >> username;
+        cout << "Enter Teacher Password: ";
+        cin >> password;
+        Teacher teacher(username, password);
+        teachers.push_back(teacher);
+        cout << "Teacher added successfully! Enrollment Number: " << teacher.getEnrollmentNumber() << endl;
+    }
+
+    void addStudent() {
+        string username, password;
+        cout << "Enter Student Username: ";
+        cin >> username;
+        cout << "Enter Student Password: ";
+        cin >> password;
+        Student student(username, password);
+        students.push_back(student);
+        cout << "Student added successfully! Enrollment Number: " << student.getEnrollmentNumber() << endl;
+    }
+
+    Teacher* getTeacher(string username) {
+        for (auto& teacher : teachers) {
+            if (teacher.getUsername() == username) {
+                return &teacher;
+            }
+        }
+        return nullptr;
+    }
+
+    Student* getStudent(string username) {
+        for (auto& student : students) {
+            if (student.getUsername() == username) {
+                return &student;
+            }
+        }
+        return nullptr;
+    }
+
+    void editTeacherDetails() {
+        string username;
+        cout << "Enter Teacher Username to Edit: ";
+        cin >> username;
+        Teacher* teacher = getTeacher(username);
+        if (teacher) {
+            string newUsername, newPassword;
+            cout << "Enter New Username: ";
+            cin >> newUsername;
+            cout << "Enter New Password: ";
+            cin >> newPassword;
+            teacher->setUsername(newUsername);
+            teacher->setPassword(newPassword);
+            cout << "Teacher details updated successfully!\n";
+        }
+        else {
+            cout << "Teacher not found!\n";
+        }
+    }
+
+    void editStudentDetails() {
+        string username;
+        cout << "Enter Student Username to Edit: ";
+        cin >> username;
+        Student* student = getStudent(username);
+        if (student) {
+            string newUsername, newPassword;
+            cout << "Enter New Username: ";
+            cin >> newUsername;
+            cout << "Enter New Password: ";
+            cin >> newPassword;
+            student->setUsername(newUsername);
+            student->setPassword(newPassword);
+            cout << "Student details updated successfully!\n";
+        }
+        else {
+            cout << "Student not found!\n";
+        }
+    }
+
+    void userManagementMenu() {
+        int choice;
+        do {
+            cout << "\n=== USER MANAGEMENT ===\n";
+            cout << "1. Add New Student\n";
+            cout << "2. Edit Student Details\n";
+            cout << "3. Add New Teacher\n";
+            cout << "4. Edit Teacher Details\n";
+            cout << "5. View All Teachers\n";
+            cout << "6. View All Students\n";
+            cout << "7. Back To Admin Panel\n";
+            cout << "========================\n";
+            cout << "Enter your choice: ";
+            cin >> choice;
+
+            switch (choice) {
+            case 1: addStudent(); break;
+            case 2: editStudentDetails(); break;
+            case 3: addStudent(); break;
+            case 4: editTeacherDetails(); break;
+            case 5: {
+                cout << "\nTeachers:\n";
+                for (const auto& teacher : teachers) {
+                    cout << "- Username: " << teacher.getUsername() << ", Enrollment: " << teacher.getEnrollmentNumber() << endl;
+                }; break;
+            }
+            case 6: {
+                cout << "\nStudents:\n";
+                for (const auto& student : students) {
+                    cout << "- Username: " << student.getUsername() << ", Enrollment: " << student.getEnrollmentNumber() << endl;
+                }
+            } break;
+            case 7: cout << "Returning to Admin Panel...\n"; break;
+            default: cout << "Invalid choice! Try again.\n";
+            }
+        } while (choice != 7);
+    }
+};
+
+// ======================== Course Management ========================
+
+class Course {
+private:
+    string courseName;
+    string courseCode;
+    string teacherAssigned;
+    bool published;
+
+public:
+    Course(string name, string code, string teacher, bool isPublished)
+        : courseName(name), courseCode(code), teacherAssigned(teacher), published(isPublished) {}
+
+    void displayCourse(int index) const {
+        cout << left << setw(5) << index + 1
+            << setw(20) << courseName
+            << setw(15) << courseCode
+            << setw(20) << teacherAssigned
+            << (published ? "Yes" : "No") << endl;
+    }
+
+    void editCourse(string name, string code, string teacher, bool isPublished) {
+        courseName = name;
+        courseCode = code;
+        teacherAssigned = teacher;
+        published = isPublished;
+    }
+
+    string getCourseName() const {
+        return courseName;
+    }
+
+    void publishCourse() {
+        published = true;
+    }
+};
+
+class CourseManagement {
+private:
+    vector<Course> courses;
+
+    void displayAllCourses() const {
+        if (courses.empty()) {
+            cout << "\nNo courses available.\n";
+            return;
+        }
+
+        cout << "\n--- Course List ---\n";
+        cout << left << setw(5) << "No."
+            << setw(20) << "Course Name"
+            << setw(15) << "Course Code"
+            << setw(20) << "Assigned Teacher"
+            << "Published\n";
+        cout << string(65, '-') << endl;
+
+        for (size_t i = 0; i < courses.size(); ++i) {
+            courses[i].displayCourse(i);
+        }
+    }
+
+public:
+    void addNewCourse() {
+        string name, code, teacher;
+        char isPublished;
+
+        cout << "\nEnter Course Name: ";
+        cin.ignore();
+        getline(cin, name);
+
+        cout << "Enter Course Code: ";
+        getline(cin, code);
+
+        cout << "Enter Assigned Teacher: ";
+        getline(cin, teacher);
+
+        cout << "Is the course published? (y/n): ";
+        cin >> isPublished;
+
+        courses.emplace_back(name, code, teacher, (isPublished == 'y' || isPublished == 'Y'));
+        cout << "Course added successfully!\n";
+    }
+
+    void editCourse() {
+        displayAllCourses();
+        if (courses.empty()) return;
+
+        int choice;
+        cout << "Enter the course number to edit: ";
+        cin >> choice;
+
+        if (choice < 1 || choice > courses.size()) {
+            cout << "Invalid choice!\n";
+            return;
+        }
+
+        string name, code, teacher;
+        char isPublished;
+
+        cout << "\nEnter New Course Name: ";
+        cin.ignore();
+        getline(cin, name);
+
+        cout << "Enter New Course Code: ";
+        getline(cin, code);
+
+        cout << "Enter New Assigned Teacher: ";
+        getline(cin, teacher);
+
+        cout << "Is the course published? (y/n): ";
+        cin >> isPublished;
+
+        courses[choice - 1].editCourse(name, code, teacher, (isPublished == 'y' || isPublished == 'Y'));
+        cout << "Course updated successfully!\n";
+    }
+
+    void deleteCourse() {
+        displayAllCourses();
+        if (courses.empty()) return;
+
+        int choice;
+        cout << "Enter the course number to delete: ";
+        cin >> choice;
+
+        if (choice < 1 || choice > courses.size()) {
+            cout << "Invalid choice!\n";
+            return;
+        }
+
+        cout << "Course \"" << courses[choice - 1].getCourseName() << "\" has been deleted.\n";
+        courses.erase(courses.begin() + choice - 1);
+    }
+
+    void courseManagementMenu() {
+        int choice;
+        do {
+            cout << "\n=== COURSE MANAGEMENT ===\n";
+            cout << "1. Add New Course\n";
+            cout << "2. Edit Course\n";
+            cout << "3. Delete Course\n";
+            cout << "4. Back To Admin Panel\n";
+            cout << "========================\n";
+            cout << "Enter your choice: ";
+            cin >> choice;
+
+            switch (choice) {
+            case 1: addNewCourse(); break;
+            case 2: editCourse(); break;
+            case 3: deleteCourse(); break;
+            case 4: cout << "Returning to Admin Panel...\n"; break;
+            default: cout << "Invalid choice! Please try again.\n";
+            }
+        } while (choice != 4);
+    }
+};
+
+// ======================== Admission Management ========================
+
+// NewStudent class definition
+class NewStudent {
+public:
+    string name;
+    string fatherName;
+    string cnic;
+    string homeAddress;
+    float sscMarks;
+    float hsscMarks;
+    string username;
+    string password;
+    int registeredNumber;
+
+    NewStudent() = default;
+
+    NewStudent(const string& name, const string& fatherName, const string& cnic, const string& homeAddress, float sscMarks, float hsscMarks, const string& username, const string& password, int registeredNumber)
+        : name(name), fatherName(fatherName), cnic(cnic), homeAddress(homeAddress), sscMarks(sscMarks), hsscMarks(hsscMarks), username(username), password(password), registeredNumber(registeredNumber) {}
+
+    void displayDetails() const {
+        cout << left << setw(10) << registeredNumber << setw(20) << name << setw(15) << cnic << "Pass-out\n";
+    }
+
+    void viewProfile() const {
+        cout << "\n--- Profile Information ---\n";
+        cout << "Name: " << name << "\n";
+        cout << "Father's Name: " << fatherName << "\n";
+        cout << "CNIC: " << cnic << "\n";
+        cout << "Home Address: " << homeAddress << "\n";
+        cout << "SSC Marks: " << sscMarks << "\n";
+        cout << "HSSC Marks: " << hsscMarks << "\n";
+        cout << "Username: " << username << "\n";
+        cout << "Registered Number: " << registeredNumber << "\n";
+    }
+};
+
+// AdmissionManagement class definition
+class AdmissionManagement {
+private:
+    vector<string> meritList;
+    vector<NewStudent> newStudents; // To store new students
+    vector<pair<string, int>> cbtTestScores; // To store CBT test scores (student name and score)
+
+    void displayMeritList() const {
+        if (meritList.empty()) {
+            cout << "\nMerit list is empty!\n";
+        }
+        else {
+            cout << "\n---- Merit List ----\n";
+            for (size_t i = 0; i < meritList.size(); ++i) {
+                cout << i + 1 << ". " << meritList[i] << "\n";
+            }
+        }
+        cout << "----------------------\n";
+    }
+
+    void displayNewStudents() const {
+        if (newStudents.empty()) {
+            cout << "\nNo new students available.\n";
+            return;
+        }
+
+        cout << "\n--- New Student List ---\n";
+        cout << left << setw(10) << "ID" << setw(20) << "Name" << setw(15) << "Contact" << "Pass-out\n";
+        cout << string(55, '-') << endl;
+
+        for (const auto& student : newStudents)
+            student.displayDetails();
+    }
+
+    void displayCBTTestScores() const {
+        if (cbtTestScores.empty()) {
+            cout << "\nNo CBT test scores available.\n";
+            return;
+        }
+
+        cout << "\n--- CBT Test Scores ---\n";
+        cout << left << setw(20) << "Student Name" << "Score\n";
+        cout << string(30, '-') << endl;
+
+        for (const auto& score : cbtTestScores) {
+            cout << left << setw(20) << score.first << score.second << "\n";
+        }
+    }
+
+public:
+    void addMeritList() {
+        string studentName;
+        cout << "Enter student name to add to the merit list: ";
+        cin.ignore();
+        getline(cin, studentName);
+        meritList.push_back(studentName);
+        cout << "Student \"" << studentName << "\" has been added to the merit list.\n";
+    }
+
+    void editMeritList() {
+        if (meritList.empty()) {
+            cout << "\nMerit list is empty! Nothing to edit.\n";
+            return;
+        }
+
+        displayMeritList();
+        int index;
+        cout << "Enter the number of the student you want to edit: ";
+        cin >> index;
+
+        if (index < 1 || index > meritList.size()) {
+            cout << "Invalid choice! Try again.\n";
+            return;
+        }
+
+        string newName;
+        cout << "Enter the new name for student " << index << ": ";
+        cin.ignore();
+        getline(cin, newName);
+        meritList[index - 1] = newName;
+        cout << "Student's name has been updated successfully!\n";
+    }
+
+    void displayMenuMeritList() const {
+        displayMeritList();
+    }
+
+    void deleteMeritList() {
+        if (meritList.empty()) {
+            cout << "\nMerit list is empty! Nothing to delete.\n";
+            return;
+        }
+
+        displayMeritList();
+        int index;
+        cout << "Enter the number of the student to delete: ";
+        cin >> index;
+
+        if (index < 1 || index > meritList.size()) {
+            cout << "Invalid choice! Try again.\n";
+            return;
+        }
+
+        cout << "Student \"" << meritList[index - 1] << "\" has been removed from the merit list.\n";
+        meritList.erase(meritList.begin() + index - 1);
+    }
+
+    void addNewStudent(const NewStudent& student) {
+        newStudents.push_back(student);
+    }
+
+    void addCBTTestScore(const string& studentName, int score) {
+        cbtTestScores.emplace_back(studentName, score);
+    }
+
+    void deleteRegisteredStudent(int registeredNumber) {
+        auto it = remove_if(newStudents.begin(), newStudents.end(), [registeredNumber](const NewStudent& student) {
+            return student.registeredNumber == registeredNumber;
+            });
+
+        if (it != newStudents.end()) {
+            newStudents.erase(it, newStudents.end());
+            cout << "Student with registered number " << registeredNumber << " has been deleted.\n";
+        }
+        else {
+            cout << "Student with registered number " << registeredNumber << " not found.\n";
+        }
+    }
+
+    void admissionMenu() {
+        int choice;
+        do {
+            cout << "\n===== ADMISSION MANAGEMENT MENU =====\n";
+            cout << "1. Add Merit List\n";
+            cout << "2. Edit Merit List\n";
+            cout << "3. Display Merit List\n";
+            cout << "4. Delete Merit List\n";
+            cout << "5. Display New Students\n";
+            cout << "6. Display All CBT Tests Scores\n";
+            cout << "7. Delete Registered Student\n";
+            cout << "8. Back To Main Menu\n";
+            cout << "======================================\n";
+            cout << "Enter your choice: ";
+            cin >> choice;
+
+            switch (choice) {
+            case 1:
+                addMeritList();
+                break;
+            case 2:
+                editMeritList();
+                break;
+            case 3:
+                displayMeritList();
+                break;
+            case 4:
+                deleteMeritList();
+                break;
+            case 5:
+                displayNewStudents();
+                break;
+            case 6:
+                displayCBTTestScores();
+                break;
+            case 7: {
+                int registeredNumber;
+                cout << "Enter the registered number of the student to delete: ";
+                cin >> registeredNumber;
+                deleteRegisteredStudent(registeredNumber);
+                break;
+            }
+            case 8:
+                cout << "Returning to Main Menu...\n";
+                break;
+            default:
+                cout << "Invalid choice! Please try again.\n";
+            }
+        } while (choice != 8);
+    }
+
+    vector<string> getMeritList() const {
+        return meritList;
+    }
+};
+
+// NewStudentPortal class definition
+class NewStudentPortal {
+private:
+    AdmissionManagement& adminMgmt; // Pass by reference to ensure data consistency
+    map<string, NewStudent> studentDatabase;
+    int studentCounter = 2220; // Starting registered number for students
+
+    void registerStudent() {
+        string name, fatherName, cnic, homeAddress, username, password;
+        float sscMarks, hsscMarks;
+
+        cout << "Enter your name: ";
+        cin.ignore();
+        getline(cin, name);
+
+        cout << "Enter your father's name: ";
+        getline(cin, fatherName);
+
+        cout << "Enter your CNIC: ";
+        getline(cin, cnic);
+
+        cout << "Enter your home address: ";
+        getline(cin, homeAddress);
+
+        cout << "Enter your SSC Marks: ";
+        cin >> sscMarks;
+
+        cout << "Enter your HSSC Marks: ";
+        cin >> hsscMarks;
+
+        cout << "Set your username: ";
+        cin.ignore();
+        getline(cin, username);
+
+        cout << "Set your password: ";
+        getline(cin, password);
+
+        NewStudent newStudent(name, fatherName, cnic, homeAddress, sscMarks, hsscMarks, username, password, studentCounter++);
+        studentDatabase[username] = newStudent;
+        adminMgmt.addNewStudent(newStudent);
+
+        cout << "Registration successful! Your registered number is: " << newStudent.registeredNumber << "\n";
+    }
+
+    bool loginStudent(string& username) {
+        string password;
+        cout << "Enter username: ";
+        cin.ignore();
+        getline(cin, username);
+
+        if (studentDatabase.find(username) == studentDatabase.end()) {
+            cout << "Username not found!\n";
+            return false;
+        }
+
+        cout << "Enter password: ";
+        getline(cin, password);
+
+        if (studentDatabase[username].password != password) {
+            cout << "Incorrect password!\n";
+            return false;
+        }
+
+        return true;
+    }
+
+    void viewStudentProfile(const string& username) {
+        if (studentDatabase.find(username) != studentDatabase.end()) {
+            studentDatabase[username].viewProfile();
+        }
+        else {
+            cout << "Profile not found!\n";
+        }
+    }
+
+    void takeCBTTest(const string& username) {
+        int score = 0;
+        vector<pair<string, string>> questions = {
+            {"What is the capital of France?", "Paris"},
+            {"What is 2 + 2?", "4"},
+            {"What is the color of the sky?", "Blue"},
+            {"Who wrote 'Hamlet'?", "Shakespeare"},
+            {"What is the boiling point of water?", "100"}
+        };
+
+        cout << "\n--- CBT Test ---\n";
+        for (const auto& question : questions) {
+            string answer;
+            cout << question.first << "\n";
+            cout << "Your answer: ";
+            getline(cin, answer);
+            if (answer == question.second) {
+                ++score;
+            }
+        }
+
+        adminMgmt.addCBTTestScore(username, score);
+        cout << "CBT Test completed! Your score is: " << score << "/5\n";
+    }
+
+    void studentMenu(const string& username) {
+        int choice;
+        do {
+            cout << "\n===== STUDENT MENU =====\n";
+            cout << "1. View Profile\n";
+            cout << "2. Take CBT Test\n";
+            cout << "3. View Merit List\n";
+            cout << "4. Logout\n";
+            cout << "=========================\n";
+            cout << "Enter your choice: ";
+            cin >> choice;
+            cin.ignore();
+
+            switch (choice) {
+            case 1:
+                viewStudentProfile(username);
+                break;
+            case 2:
+                takeCBTTest(username);
+                break;
+            case 3: {
+                vector<string> meritList = adminMgmt.getMeritList();
+                cout << "\n---- Merit List ----\n";
+                for (size_t i = 0; i < meritList.size(); ++i) {
+                    cout << i + 1 << ". " << meritList[i] << "\n";
+                }
+                cout << "----------------------\n";
+                break;
+            }
+            case 4:
+                cout << "Logging out...\n";
+                break;
+            default:
+                cout << "Invalid choice! Please try again.\n";
+            }
+        } while (choice != 4);
+    }
+
+public:
+    NewStudentPortal(AdmissionManagement& adminMgmt) : adminMgmt(adminMgmt) {}
+
+    void runPortal() {
+        int studentChoice;
+        cout << "\n===== STUDENT PANEL =====\n";
+        cout << "1. Registration\n";
+        cout << "2. Login\n";
+        cout << "3. Back\n";
+        cout << "=========================\n";
+        cout << "Enter your choice: ";
+        cin >> studentChoice;
+
+        switch (studentChoice) {
+        case 1:
+            registerStudent();
+            break;
+        case 2: {
+            string username;
+            if (loginStudent(username)) {
+                studentMenu(username);
+            }
+            break;
+        }
+        case 3:
+            break;
+        default:
+            cout << "Invalid choice! Please try again.\n";
+        }
+
+    }
+
+};
+
+//=========================================================================================
 
 
+
+
+//===============Short Course Management System==================
 
 class CourseUser {
 protected:
@@ -909,670 +1590,7 @@ void displayStudentMenu(CourseStudent, CourseTeacher);    // Displays the studen
 
 
 
-// ======================== User Management ========================
-class UserManagement {
-private:
-    vector<Teacher> teachers;
-    vector<Student> students;
 
-public:
-    void addTeacher() {
-        string username, password;
-        cout << "Enter Teacher Username: ";
-        cin >> username;
-        cout << "Enter Teacher Password: ";
-        cin >> password;
-        Teacher teacher(username, password);
-        teachers.push_back(teacher);
-        cout << "Teacher added successfully! Enrollment Number: " << teacher.getEnrollmentNumber() << endl;
-    }
-
-    void addStudent() {
-        string username, password;
-        cout << "Enter Student Username: ";
-        cin >> username;
-        cout << "Enter Student Password: ";
-        cin >> password;
-        Student student(username, password);
-        students.push_back(student);
-        cout << "Student added successfully! Enrollment Number: " << student.getEnrollmentNumber() << endl;
-    }
-
-    Teacher* getTeacher(string username) {
-        for (auto& teacher : teachers) {
-            if (teacher.getUsername() == username) {
-                return &teacher;
-            }
-        }
-        return nullptr;
-    }
-
-    Student* getStudent(string username) {
-        for (auto& student : students) {
-            if (student.getUsername() == username) {
-                return &student;
-            }
-        }
-        return nullptr;
-    }
-
-    void editTeacherDetails() {
-        string username;
-        cout << "Enter Teacher Username to Edit: ";
-        cin >> username;
-        Teacher* teacher = getTeacher(username);
-        if (teacher) {
-            string newUsername, newPassword;
-            cout << "Enter New Username: ";
-            cin >> newUsername;
-            cout << "Enter New Password: ";
-            cin >> newPassword;
-            teacher->setUsername(newUsername);
-            teacher->setPassword(newPassword);
-            cout << "Teacher details updated successfully!\n";
-        }
-        else {
-            cout << "Teacher not found!\n";
-        }
-    }
-
-    void editStudentDetails() {
-        string username;
-        cout << "Enter Student Username to Edit: ";
-        cin >> username;
-        Student* student = getStudent(username);
-        if (student) {
-            string newUsername, newPassword;
-            cout << "Enter New Username: ";
-            cin >> newUsername;
-            cout << "Enter New Password: ";
-            cin >> newPassword;
-            student->setUsername(newUsername);
-            student->setPassword(newPassword);
-            cout << "Student details updated successfully!\n";
-        }
-        else {
-            cout << "Student not found!\n";
-        }
-    }
-
-    void userManagementMenu() {
-        int choice;
-        do {
-            cout << "\n=== USER MANAGEMENT ===\n";
-            cout << "1. Add New Student\n";
-            cout << "2. Edit Student Details\n";
-            cout << "3. Add New Teacher\n";
-            cout << "4. Edit Teacher Details\n";
-            cout << "5. View All Teachers\n";
-            cout << "6. View All Students\n";
-            cout << "7. Back To Admin Panel\n";
-            cout << "========================\n";
-            cout << "Enter your choice: ";
-            cin >> choice;
-
-            switch (choice) {
-            case 1: addStudent(); break;
-            case 2: editStudentDetails(); break;
-            case 3: addStudent(); break;
-            case 4: editTeacherDetails(); break;
-            case 5: {
-                cout << "\nTeachers:\n";
-                for (const auto& teacher : teachers) {
-                    cout << "- Username: " << teacher.getUsername() << ", Enrollment: " << teacher.getEnrollmentNumber() << endl;
-                }; break;
-            }
-            case 6: {
-                cout << "\nStudents:\n";
-                for (const auto& student : students) {
-                    cout << "- Username: " << student.getUsername() << ", Enrollment: " << student.getEnrollmentNumber() << endl;
-                }
-            } break;
-            case 7: cout << "Returning to Admin Panel...\n"; break;
-            default: cout << "Invalid choice! Try again.\n";
-            }
-        } while (choice != 7);
-    }
-};
-
-// ======================== Course Management ========================
-
-class Course {
-private:
-    string courseName;
-    string courseCode;
-    string teacherAssigned;
-    bool published;
-
-public:
-    Course(string name, string code, string teacher, bool isPublished)
-        : courseName(name), courseCode(code), teacherAssigned(teacher), published(isPublished) {}
-
-    void displayCourse(int index) const {
-        cout << left << setw(5) << index + 1
-            << setw(20) << courseName
-            << setw(15) << courseCode
-            << setw(20) << teacherAssigned
-            << (published ? "Yes" : "No") << endl;
-    }
-
-    void editCourse(string name, string code, string teacher, bool isPublished) {
-        courseName = name;
-        courseCode = code;
-        teacherAssigned = teacher;
-        published = isPublished;
-    }
-
-    string getCourseName() const {
-        return courseName;
-    }
-
-    void publishCourse() {
-        published = true;
-    }
-};
-
-class CourseManagement {
-private:
-    vector<Course> courses;
-
-    void displayAllCourses() const {
-        if (courses.empty()) {
-            cout << "\nNo courses available.\n";
-            return;
-        }
-
-        cout << "\n--- Course List ---\n";
-        cout << left << setw(5) << "No."
-            << setw(20) << "Course Name"
-            << setw(15) << "Course Code"
-            << setw(20) << "Assigned Teacher"
-            << "Published\n";
-        cout << string(65, '-') << endl;
-
-        for (size_t i = 0; i < courses.size(); ++i) {
-            courses[i].displayCourse(i);
-        }
-    }
-
-public:
-    void addNewCourse() {
-        string name, code, teacher;
-        char isPublished;
-
-        cout << "\nEnter Course Name: ";
-        cin.ignore();
-        getline(cin, name);
-
-        cout << "Enter Course Code: ";
-        getline(cin, code);
-
-        cout << "Enter Assigned Teacher: ";
-        getline(cin, teacher);
-
-        cout << "Is the course published? (y/n): ";
-        cin >> isPublished;
-
-        courses.emplace_back(name, code, teacher, (isPublished == 'y' || isPublished == 'Y'));
-        cout << "Course added successfully!\n";
-    }
-
-    void editCourse() {
-        displayAllCourses();
-        if (courses.empty()) return;
-
-        int choice;
-        cout << "Enter the course number to edit: ";
-        cin >> choice;
-
-        if (choice < 1 || choice > courses.size()) {
-            cout << "Invalid choice!\n";
-            return;
-        }
-
-        string name, code, teacher;
-        char isPublished;
-
-        cout << "\nEnter New Course Name: ";
-        cin.ignore();
-        getline(cin, name);
-
-        cout << "Enter New Course Code: ";
-        getline(cin, code);
-
-        cout << "Enter New Assigned Teacher: ";
-        getline(cin, teacher);
-
-        cout << "Is the course published? (y/n): ";
-        cin >> isPublished;
-
-        courses[choice - 1].editCourse(name, code, teacher, (isPublished == 'y' || isPublished == 'Y'));
-        cout << "Course updated successfully!\n";
-    }
-
-    void deleteCourse() {
-        displayAllCourses();
-        if (courses.empty()) return;
-
-        int choice;
-        cout << "Enter the course number to delete: ";
-        cin >> choice;
-
-        if (choice < 1 || choice > courses.size()) {
-            cout << "Invalid choice!\n";
-            return;
-        }
-
-        cout << "Course \"" << courses[choice - 1].getCourseName() << "\" has been deleted.\n";
-        courses.erase(courses.begin() + choice - 1);
-    }
-
-    void courseManagementMenu() {
-        int choice;
-        do {
-            cout << "\n=== COURSE MANAGEMENT ===\n";
-            cout << "1. Add New Course\n";
-            cout << "2. Edit Course\n";
-            cout << "3. Delete Course\n";
-            cout << "4. Back To Admin Panel\n";
-            cout << "========================\n";
-            cout << "Enter your choice: ";
-            cin >> choice;
-
-            switch (choice) {
-            case 1: addNewCourse(); break;
-            case 2: editCourse(); break;
-            case 3: deleteCourse(); break;
-            case 4: cout << "Returning to Admin Panel...\n"; break;
-            default: cout << "Invalid choice! Please try again.\n";
-            }
-        } while (choice != 4);
-    }
-};
-
-// ======================== Admission Management ========================
-
-// NewStudent class definition
-class NewStudent {
-public:
-    string name;
-    string fatherName;
-    string cnic;
-    string homeAddress;
-    float sscMarks;
-    float hsscMarks;
-    string username;
-    string password;
-    int registeredNumber;
-
-    NewStudent() = default;
-
-    NewStudent(const string& name, const string& fatherName, const string& cnic, const string& homeAddress, float sscMarks, float hsscMarks, const string& username, const string& password, int registeredNumber)
-        : name(name), fatherName(fatherName), cnic(cnic), homeAddress(homeAddress), sscMarks(sscMarks), hsscMarks(hsscMarks), username(username), password(password), registeredNumber(registeredNumber) {}
-
-    void displayDetails() const {
-        cout << left << setw(10) << registeredNumber << setw(20) << name << setw(15) << cnic << "Pass-out\n";
-    }
-
-    void viewProfile() const {
-        cout << "\n--- Profile Information ---\n";
-        cout << "Name: " << name << "\n";
-        cout << "Father's Name: " << fatherName << "\n";
-        cout << "CNIC: " << cnic << "\n";
-        cout << "Home Address: " << homeAddress << "\n";
-        cout << "SSC Marks: " << sscMarks << "\n";
-        cout << "HSSC Marks: " << hsscMarks << "\n";
-        cout << "Username: " << username << "\n";
-        cout << "Registered Number: " << registeredNumber << "\n";
-    }
-};
-
-// AdmissionManagement class definition
-class AdmissionManagement {
-private:
-    vector<string> meritList;
-    vector<NewStudent> newStudents; // To store new students
-    vector<pair<string, int>> cbtTestScores; // To store CBT test scores (student name and score)
-
-    void displayMeritList() const {
-        if (meritList.empty()) {
-            cout << "\nMerit list is empty!\n";
-        }
-        else {
-            cout << "\n---- Merit List ----\n";
-            for (size_t i = 0; i < meritList.size(); ++i) {
-                cout << i + 1 << ". " << meritList[i] << "\n";
-            }
-        }
-        cout << "----------------------\n";
-    }
-
-    void displayNewStudents() const {
-        if (newStudents.empty()) {
-            cout << "\nNo new students available.\n";
-            return;
-        }
-
-        cout << "\n--- New Student List ---\n";
-        cout << left << setw(10) << "ID" << setw(20) << "Name" << setw(15) << "Contact" << "Pass-out\n";
-        cout << string(55, '-') << endl;
-
-        for (const auto& student : newStudents)
-            student.displayDetails();
-    }
-
-    void displayCBTTestScores() const {
-        if (cbtTestScores.empty()) {
-            cout << "\nNo CBT test scores available.\n";
-            return;
-        }
-
-        cout << "\n--- CBT Test Scores ---\n";
-        cout << left << setw(20) << "Student Name" << "Score\n";
-        cout << string(30, '-') << endl;
-
-        for (const auto& score : cbtTestScores) {
-            cout << left << setw(20) << score.first << score.second << "\n";
-        }
-    }
-
-public:
-    void addMeritList() {
-        string studentName;
-        cout << "Enter student name to add to the merit list: ";
-        cin.ignore();
-        getline(cin, studentName);
-        meritList.push_back(studentName);
-        cout << "Student \"" << studentName << "\" has been added to the merit list.\n";
-    }
-
-    void editMeritList() {
-        if (meritList.empty()) {
-            cout << "\nMerit list is empty! Nothing to edit.\n";
-            return;
-        }
-
-        displayMeritList();
-        int index;
-        cout << "Enter the number of the student you want to edit: ";
-        cin >> index;
-
-        if (index < 1 || index > meritList.size()) {
-            cout << "Invalid choice! Try again.\n";
-            return;
-        }
-
-        string newName;
-        cout << "Enter the new name for student " << index << ": ";
-        cin.ignore();
-        getline(cin, newName);
-        meritList[index - 1] = newName;
-        cout << "Student's name has been updated successfully!\n";
-    }
-
-    void displayMenuMeritList() const {
-        displayMeritList();
-    }
-
-    void deleteMeritList() {
-        if (meritList.empty()) {
-            cout << "\nMerit list is empty! Nothing to delete.\n";
-            return;
-        }
-
-        displayMeritList();
-        int index;
-        cout << "Enter the number of the student to delete: ";
-        cin >> index;
-
-        if (index < 1 || index > meritList.size()) {
-            cout << "Invalid choice! Try again.\n";
-            return;
-        }
-
-        cout << "Student \"" << meritList[index - 1] << "\" has been removed from the merit list.\n";
-        meritList.erase(meritList.begin() + index - 1);
-    }
-
-    void addNewStudent(const NewStudent& student) {
-        newStudents.push_back(student);
-    }
-
-    void addCBTTestScore(const string& studentName, int score) {
-        cbtTestScores.emplace_back(studentName, score);
-    }
-
-    void deleteRegisteredStudent(int registeredNumber) {
-        auto it = remove_if(newStudents.begin(), newStudents.end(), [registeredNumber](const NewStudent& student) {
-            return student.registeredNumber == registeredNumber;
-            });
-
-        if (it != newStudents.end()) {
-            newStudents.erase(it, newStudents.end());
-            cout << "Student with registered number " << registeredNumber << " has been deleted.\n";
-        }
-        else {
-            cout << "Student with registered number " << registeredNumber << " not found.\n";
-        }
-    }
-
-    void admissionMenu() {
-        int choice;
-        do {
-            cout << "\n===== ADMISSION MANAGEMENT MENU =====\n";
-            cout << "1. Add Merit List\n";
-            cout << "2. Edit Merit List\n";
-            cout << "3. Display Merit List\n";
-            cout << "4. Delete Merit List\n";
-            cout << "5. Display New Students\n";
-            cout << "6. Display All CBT Tests Scores\n";
-            cout << "7. Delete Registered Student\n";
-            cout << "8. Back To Main Menu\n";
-            cout << "======================================\n";
-            cout << "Enter your choice: ";
-            cin >> choice;
-
-            switch (choice) {
-            case 1:
-                addMeritList();
-                break;
-            case 2:
-                editMeritList();
-                break;
-            case 3:
-                displayMenuMeritList();
-                break;
-            case 4:
-                deleteMeritList();
-                break;
-            case 5:
-                displayNewStudents();
-                break;
-            case 6:
-                displayCBTTestScores();
-                break;
-            case 7: {
-                int registeredNumber;
-                cout << "Enter the registered number of the student to delete: ";
-                cin >> registeredNumber;
-                deleteRegisteredStudent(registeredNumber);
-                break;
-            }
-            case 8:
-                cout << "Returning to Main Menu...\n";
-                break;
-            default:
-                cout << "Invalid choice! Please try again.\n";
-            }
-        } while (choice != 8);
-    }
-};
-
-// NewStudentPortal class definition
-class NewStudentPortal {
-private:
-    AdmissionManagement adminMgmt;
-    map<string, NewStudent> studentDatabase;
-	int studentCounter = 2220; // Starting registered number for students
-
-    void registerStudent() {
-        string name, fatherName, cnic, homeAddress, username, password;
-        float sscMarks, hsscMarks;
-
-        cout << "Enter your name: ";
-        cin.ignore();
-        getline(cin, name);
-
-        cout << "Enter your father's name: ";
-        getline(cin, fatherName);
-
-        cout << "Enter your CNIC: ";
-        getline(cin, cnic);
-
-        cout << "Enter your home address: ";
-        getline(cin, homeAddress);
-
-        cout << "Enter your SSC Marks: ";
-        cin >> sscMarks;
-
-        cout << "Enter your HSSC Marks: ";
-        cin >> hsscMarks;
-
-        cout << "Set your username: ";
-        cin.ignore();
-        getline(cin, username);
-
-        cout << "Set your password: ";
-        getline(cin, password);
-
-        NewStudent newStudent(name, fatherName, cnic, homeAddress, sscMarks, hsscMarks, username, password, studentCounter++);
-        studentDatabase[username] = newStudent;
-        adminMgmt.addNewStudent(newStudent);
-
-        cout << "Registration successful! Your registered number is: " << newStudent.registeredNumber << "\n";
-    }
-
-    bool loginStudent(string& username) {
-        string password;
-        cout << "Enter username: ";
-        cin.ignore();
-        getline(cin, username);
-
-        if (studentDatabase.find(username) == studentDatabase.end()) {
-            cout << "Username not found!\n";
-            return false;
-        }
-
-        cout << "Enter password: ";
-        getline(cin, password);
-
-        if (studentDatabase[username].password != password) {
-            cout << "Incorrect password!\n";
-            return false;
-        }
-
-        return true;
-    }
-
-    void viewStudentProfile(const string& username) {
-        if (studentDatabase.find(username) != studentDatabase.end()) {
-            studentDatabase[username].viewProfile();
-        }
-        else {
-            cout << "Profile not found!\n";
-        }
-    }
-
-    void takeCBTTest(const string& username) {
-        int score = 0;
-        vector<pair<string, string>> questions = {
-            {"What is the capital of France?", "Paris"},
-            {"What is 2 + 2?", "4"},
-            {"What is the color of the sky?", "Blue"},
-            {"Who wrote 'Hamlet'?", "Shakespeare"},
-            {"What is the boiling point of water?", "100"}
-        };
-
-        cout << "\n--- CBT Test ---\n";
-        for (const auto& question : questions) {
-            string answer;
-            cout << question.first << "\n";
-            cout << "Your answer: ";
-            getline(cin, answer);
-            if (answer == question.second) {
-                ++score;
-            }
-        }
-
-        adminMgmt.addCBTTestScore(username, score);
-        cout << "CBT Test completed! Your score is: " << score << "/5\n";
-    }
-
-    void studentMenu(const string& username) {
-        int choice;
-        do {
-            cout << "\n===== STUDENT MENU =====\n";
-            cout << "1. View Profile\n";
-            cout << "2. Take CBT Test\n";
-            cout << "3. View Merit List\n";
-            cout << "4. Logout\n";
-            cout << "=========================\n";
-            cout << "Enter your choice: ";
-            cin >> choice;
-            cin.ignore();
-
-            switch (choice) {
-            case 1:
-                viewStudentProfile(username);
-                break;
-            case 2:
-                takeCBTTest(username);
-                break;
-            case 3:
-                adminMgmt.displayMenuMeritList();
-                break;
-            case 4:
-                cout << "Logging out...\n";
-                break;
-            default:
-                cout << "Invalid choice! Please try again.\n";
-            }
-        } while (choice != 4);
-    }
-
-public:
-    void runPortal() {
-        int studentChoice;
-        cout << "\n===== STUDENT PANEL =====\n";
-        cout << "1. Registration\n";
-        cout << "2. Login\n";
-        cout << "3. Back\n";
-        cout << "=========================\n";
-        cout << "Enter your choice: ";
-        cin >> studentChoice;
-
-        switch (studentChoice) {
-        case 1:
-            registerStudent();
-            break;
-        case 2: {
-            string username;
-            if (loginStudent(username)) {
-                studentMenu(username);
-            }
-            break;
-        }
-        case 3:
-            break;
-        default:
-            cout << "Invalid choice! Please try again.\n";
-        }
-
-    }
-
-};
-
-//=========================================================================================
 
 
 //======================= ADMIN PANEL PASSWORD =======================
@@ -1629,12 +1647,13 @@ int main() {
 
     UserManagement um;
     CourseManagement cm;
-    AdmissionManagement adminMgmt;
     CoursePortal portal;
     CourseTeacher cteacher;
     CourseStudent student;
     CourseAdmin admin;
-    NewStudentPortal admissionportal;
+    AdmissionManagement adminMgmt;
+    NewStudentPortal studentPortal(adminMgmt);
+
 
     int mainChoice;
     do {
@@ -1688,7 +1707,7 @@ int main() {
             
         }
         case 2:
-			admissionportal.runPortal();
+            studentPortal.runPortal();
 			break;
         break;
 		case 3:
