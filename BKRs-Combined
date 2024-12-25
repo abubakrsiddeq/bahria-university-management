@@ -4,9 +4,12 @@
 #include <conio.h> // For _getch()
 #include <iomanip>
 #include <map>
+#include <unordered_map>
 #include <algorithm>
 #include <fstream>
 using namespace std;
+
+
 
 // ======================== User Management ========================
 
@@ -178,11 +181,369 @@ public:
 
 int Teacher::enrollmentCounter = 1110;
 
+//==================== E Library System ====================
+
+// E-Book class
+class EBook_ELib {
+private:
+    string title_ELib;
+    string author_ELib;
+    string contentFileName_ELib;
+    int serialNumber_ELib;
+
+public:
+    EBook_ELib(string t, string a, int sn) : title_ELib(t), author_ELib(a), serialNumber_ELib(sn) {
+        contentFileName_ELib = title_ELib;
+        for (auto& c : contentFileName_ELib) {
+            if (!isalnum(c)) {
+                c = '_';
+            }
+        }
+        contentFileName_ELib += ".txt";
+    }
+
+    string getTitle_ELib() const { return title_ELib; }
+    string getAuthor_ELib() const { return author_ELib; }
+    string getContentFileName_ELib() const { return contentFileName_ELib; }
+    int getSerialNumber_ELib() const { return serialNumber_ELib; }
+
+    void displayInfo_ELib() const {
+        cout << "Serial Number: " << serialNumber_ELib << ", Title: " << title_ELib << ", Author: " << author_ELib << endl;
+    }
+
+    void saveToFile_ELib(ofstream& outFile) const {
+        outFile << title_ELib << "|" << author_ELib << "|" << serialNumber_ELib << endl;
+    }
+
+    static EBook_ELib loadFromFile_ELib(ifstream& inFile) {
+        string title_ELib, author_ELib;
+        int serialNumber_ELib;
+        getline(inFile, title_ELib, '|');
+        getline(inFile, author_ELib, '|');
+        inFile >> serialNumber_ELib;
+        inFile.ignore();
+        return EBook_ELib(title_ELib, author_ELib, serialNumber_ELib);
+    }
+
+    void saveContentToFile_ELib(const string& content_ELib) const {
+        ofstream contentFile_ELib(contentFileName_ELib);
+        contentFile_ELib << content_ELib;
+        contentFile_ELib.close();
+    }
+
+    void readContent_ELib() const {
+        ifstream contentFile_ELib(contentFileName_ELib);
+        if (!contentFile_ELib) {
+            cout << "Content file not found.\n";
+            return;
+        }
+
+        string line_ELib;
+        while (getline(contentFile_ELib, line_ELib)) {
+            cout << line_ELib << endl;
+        }
+    }
+};
+
+// E-Library class
+class ELibrary_ELib {
+private:
+    vector<EBook_ELib> books_ELib;
+    unordered_map<string, vector<string>> downloadedBooks_ELib; // Maps student IDs to downloaded book titles
+    int nextSerialNumber_ELib = 1;
+
+public:
+    ELibrary_ELib() {
+        loadBooksFromFile_ELib();
+        loadDownloadedBooksFromFile_ELib();
+    }
+
+    void addBook_ELib(const string& title_ELib, const string& author_ELib, const string& content_ELib) {
+        for (const auto& book_ELib : books_ELib) {
+            if (book_ELib.getTitle_ELib() == title_ELib && book_ELib.getAuthor_ELib() == author_ELib) {
+                cout << "The book with the same title and author already exists.\n";
+                return;
+            }
+        }
+
+        EBook_ELib newBook_ELib(title_ELib, author_ELib, nextSerialNumber_ELib++);
+        books_ELib.push_back(newBook_ELib);
+        newBook_ELib.saveContentToFile_ELib(content_ELib);
+        cout << "Book and content added successfully with serial number " << newBook_ELib.getSerialNumber_ELib() << "!\n";
+        saveBooksToFile_ELib();
+    }
+
+    void deleteBook_ELib(int serialNumber_ELib) {
+        for (auto it = books_ELib.begin(); it != books_ELib.end(); ++it) {
+            if (it->getSerialNumber_ELib() == serialNumber_ELib) {
+                books_ELib.erase(it);
+                cout << "Book deleted successfully!\n";
+                saveBooksToFile_ELib();
+                return;
+            }
+        }
+        cout << "Book not found!\n";
+    }
+
+    void updateBook_ELib(int serialNumber_ELib) {
+        for (auto& book_ELib : books_ELib) {
+            if (book_ELib.getSerialNumber_ELib() == serialNumber_ELib) {
+                string newTitle_ELib, newAuthor_ELib, newContent_ELib;
+                cout << "Enter new title: ";
+                cin.ignore();
+                getline(cin, newTitle_ELib);
+                cout << "Enter new author: ";
+                getline(cin, newAuthor_ELib);
+                cout << "Enter new content: ";
+                getline(cin, newContent_ELib);
+                book_ELib = EBook_ELib(newTitle_ELib, newAuthor_ELib, book_ELib.getSerialNumber_ELib());
+                book_ELib.saveContentToFile_ELib(newContent_ELib);
+                cout << "Book updated successfully!\n";
+                saveBooksToFile_ELib();
+                return;
+            }
+        }
+        cout << "Book not found!\n";
+    }
+
+    void viewBooks_ELib() const {
+        if (books_ELib.empty()) {
+            cout << "No books available in the library.\n";
+            return;
+        }
+
+        cout << "\nAvailable Books:\n";
+        for (const auto& book_ELib : books_ELib) {
+            book_ELib.displayInfo_ELib();
+        }
+    }
+
+    void downloadBook_ELib(int serialNumber_ELib, const string& studentID_ELib) {
+        for (const auto& book_ELib : books_ELib) {
+            if (book_ELib.getSerialNumber_ELib() == serialNumber_ELib) {
+                auto& studentBooks_ELib = downloadedBooks_ELib[studentID_ELib];
+                if (find(studentBooks_ELib.begin(), studentBooks_ELib.end(), book_ELib.getTitle_ELib()) != studentBooks_ELib.end()) {
+                    cout << "You have already downloaded '" << book_ELib.getTitle_ELib() << "'.\n";
+                    return;
+                }
+                studentBooks_ELib.push_back(book_ELib.getTitle_ELib());
+                cout << "You have successfully downloaded '" << book_ELib.getTitle_ELib() << "'.\n";
+                saveDownloadedBooksToFile_ELib();
+                return;
+            }
+        }
+        cout << "Book not found!\n";
+    }
+
+    void viewDownloadedBooks_ELib(const string& studentID_ELib) const {
+        auto it_ELib = downloadedBooks_ELib.find(studentID_ELib);
+        if (it_ELib == downloadedBooks_ELib.end() || it_ELib->second.empty()) {
+            cout << "No books downloaded by you.\n";
+            return;
+        }
+
+        cout << "\nBooks downloaded by you:\n";
+        for (const auto& title_ELib : it_ELib->second) {
+            for (const auto& book_ELib : books_ELib) {
+                if (book_ELib.getTitle_ELib() == title_ELib) {
+                    cout << "  Serial Number: " << book_ELib.getSerialNumber_ELib() <<
+                        "- Title: " << book_ELib.getTitle_ELib()
+                        << ", Author: " << book_ELib.getAuthor_ELib() << endl;
+                }
+            }
+        }
+
+        int SN_ELib;
+        cout << "\nEnter the Serial Number of the book you want to read: ";
+        cin.ignore();
+        cin >> SN_ELib;
+
+        for (const auto& book_ELib : books_ELib) {
+            if (book_ELib.getSerialNumber_ELib() == SN_ELib) {
+                book_ELib.readContent_ELib();
+                return;
+            }
+        }
+
+        cout << "Book not found in your downloaded books.\n";
+    }
+
+    void viewAllDownloadedBooks_ELib() const {
+        if (downloadedBooks_ELib.empty()) {
+            cout << "No books have been downloaded by any students.\n";
+            return;
+        }
+
+        cout << "\nDownloaded Books by Students:\n";
+        for (const auto& pair_ELib : downloadedBooks_ELib) {
+            string studentName_ELib = pair_ELib.first;
+            string studentID_ELib = " " + studentName_ELib; // Assuming student ID is derived from the name for simplicity.
+
+            cout << "\nStudent: " << studentName_ELib << ", ID: " << studentID_ELib << "\n";
+            for (const auto& title_ELib : pair_ELib.second) {
+                for (const auto& book_ELib : books_ELib) {
+                    if (book_ELib.getTitle_ELib() == title_ELib) {
+                        cout << "- Book Title: " << book_ELib.getTitle_ELib()
+                            << ", Serial Number: " << book_ELib.getSerialNumber_ELib()
+                            << ", Author: " << book_ELib.getAuthor_ELib() << endl;
+                    }
+                }
+            }
+        }
+    }
+
+private:
+    void saveBooksToFile_ELib() const {
+        ofstream outFile_ELib("books_ELib.txt");
+        for (const auto& book_ELib : books_ELib) {
+            book_ELib.saveToFile_ELib(outFile_ELib);
+        }
+    }
+
+    void loadBooksFromFile_ELib() {
+        ifstream inFile_ELib("books_ELib.txt");
+        while (inFile_ELib.peek() != EOF) {
+            books_ELib.push_back(EBook_ELib::loadFromFile_ELib(inFile_ELib));
+        }
+    }
+
+    void saveDownloadedBooksToFile_ELib() const {
+        ofstream outFile_ELib("downloaded_books_ELib.txt");
+        for (const auto& pair_ELib : downloadedBooks_ELib) {
+            outFile_ELib << pair_ELib.first << endl;
+            for (const auto& title_ELib : pair_ELib.second) {
+                outFile_ELib << title_ELib << endl;
+            }
+        }
+    }
+
+    void loadDownloadedBooksFromFile_ELib() {
+        ifstream inFile_ELib("downloaded_books_ELib.txt");
+        string studentID_ELib, bookTitle_ELib;
+        while (getline(inFile_ELib, studentID_ELib)) {
+            vector<string> titles_ELib;
+            while (getline(inFile_ELib, bookTitle_ELib) && !bookTitle_ELib.empty()) {
+                titles_ELib.push_back(bookTitle_ELib);
+            }
+            downloadedBooks_ELib[studentID_ELib] = titles_ELib;
+        }
+    }
+};
+
+// E-Admin class
+class EAdmin_ELib {
+public:
+    void adminPanel_ELib(ELibrary_ELib& library_ELib) {
+        int choice_ELib;
+        do {
+            cout << "\n--- E Library Management ---\n";
+            cout << "1. Add Book\n";
+            cout << "2. View Books\n";
+            cout << "3. Delete Book\n";
+            cout << "4. Update Book\n";
+            cout << "5. View Downloaded Books\n";
+            cout << "6. Back to Main Menu\n";
+            cout << "Enter your choice: ";
+            cin >> choice_ELib;
+
+            switch (choice_ELib) {
+            case 1: {
+                string title_ELib, author_ELib, content_ELib;
+                cin.ignore();
+                cout << "Enter book title: ";
+                getline(cin, title_ELib);
+                cout << "Enter book author: ";
+                getline(cin, author_ELib);
+                cout << "Enter content for the book: ";
+                getline(cin, content_ELib);
+                library_ELib.addBook_ELib(title_ELib, author_ELib, content_ELib);
+                break;
+            }
+            case 2:
+                library_ELib.viewBooks_ELib();
+                break;
+            case 3: {
+                int serialNumber_ELib;
+                cout << "Enter the serial number of the book to delete: ";
+                cin >> serialNumber_ELib;
+                library_ELib.deleteBook_ELib(serialNumber_ELib);
+                break;
+            }
+            case 4: {
+                int serialNumber_ELib;
+                cout << "Enter the serial number of the book to update: ";
+                cin >> serialNumber_ELib;
+                library_ELib.updateBook_ELib(serialNumber_ELib);
+                break;
+            }
+            case 5:
+                library_ELib.viewAllDownloadedBooks_ELib();
+                break;
+            case 6:
+                cout << "Returning to main menu...\n";
+                break;
+            default:
+                cout << "Invalid choice! Please try again.\n";
+            }
+        } while (choice_ELib != 6);
+    }
+};
+
+// E-Student class
+class EStudent_ELib {
+public:
+    void studentPanel_ELib(ELibrary_ELib& library_ELib) {
+        int choice_ELib;
+        string studentID_ELib;
+        string studentName_ELib;
+        cin.ignore();
+        cout << "Enter your university ID: ";
+        getline(cin, studentID_ELib);
+        cout << "Enter your Name: ";
+        getline(cin, studentName_ELib);
+
+        do {
+            cout << "\n--- E Library Portal ---\n";
+            cout << "1. Download Book\n";
+            cout << "2. View Downloaded Books\n";
+            cout << "3. View Available Books\n";
+            cout << "4. Back to Main Menu\n";
+            cout << "Enter your choice: ";
+            cin >> choice_ELib;
+
+            switch (choice_ELib) {
+            case 1: {
+                int serialNumber_ELib;
+                cout << "Enter the serial number of the book you want to download: ";
+                cin >> serialNumber_ELib;
+                library_ELib.downloadBook_ELib(serialNumber_ELib, studentID_ELib);
+                break;
+            }
+            case 2:
+                library_ELib.viewDownloadedBooks_ELib(studentID_ELib);
+                break;
+            case 3:
+                library_ELib.viewBooks_ELib();
+                break;
+            case 4:
+                cout << "Returning to main menu...\n";
+                break;
+            default:
+                cout << "Invalid choice! Please try again.\n";
+            }
+        } while (choice_ELib != 4);
+    }
+};
+
+//=========================================================================================
+
 //----------------student class----------------
 class Student : public User {
     static int enrollmentCounter;
     int enrollmentNumber;
-
+private:
+    ELibrary_ELib library_ELib;
+    EStudent_ELib student_ELib;
 public:
     Student(string username, string password)
         : User(username, password), enrollmentNumber(++enrollmentCounter) {}
@@ -204,7 +565,7 @@ public:
 
         int choice;
         do {
-            cout << "1. View Profile\n2. View Lectures\n3. View Assignments:\n4. View Quizzes:\n5. Logout\n";
+            cout << "1. View Profile\n2. View Lectures\n3. View Assignments:\n4. View Quizzes:\n5. E Library\n6. Logout\n";
             cout << "Enter choice: ";
             cin >> choice;
             switch (choice)
@@ -228,12 +589,15 @@ public:
                     cout << "- " << quiz << endl;
                 break;
             case 5:
+                student_ELib.studentPanel_ELib(library_ELib);
+                break;
+            case 6:
                 cout << "Logging out...\n";
                 break;
             default:
                 break;
             }
-        } while (choice != 5);
+        } while (choice != 6);
     }
 };
 
@@ -940,8 +1304,6 @@ public:
 };
 
 //=========================================================================================
-
-
 
 
 //===============Short Course Management System==================
@@ -1676,6 +2038,9 @@ int main() {
     CourseAdmin admin;
     AdmissionManagement adminMgmt;
     NewStudentPortal studentPortal(adminMgmt);
+    ELibrary_ELib library_ELib;
+    EAdmin_ELib admin_ELib;
+    EStudent_ELib student_ELib;
 
 
     int mainChoice;
@@ -1700,7 +2065,8 @@ int main() {
                     cout << "1. User Management\n";
                     cout << "2. Course Management\n";
                     cout << "3. Admission Management\n";
-                    cout << "4. Back to Main Menu\n";
+                    cout << "4. E Library Management\n";
+                    cout << "5. Back to Main Menu\n";
                     cout << "========================\n";
                     cout << "Enter your choice: ";
                     cin >> adminChoice;
@@ -1716,12 +2082,15 @@ int main() {
                         adminMgmt.admissionMenu();
                         break;
                     case 4:
+                        admin_ELib.adminPanel_ELib(library_ELib);
+						break;
+                    case 5:
                         cout << "Returning to Main Menu...\n";
                         break;
                     default:
                         cout << "Invalid choice! Please try again.\n";
                     }
-                } while (adminChoice != 4);
+                } while (adminChoice != 5);
             }
             else {
                 cout << "Incorrect Password. Returning to Main Menu." << endl;
